@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       // 1. Apuntamos a tu API en Laravel Herd
-      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

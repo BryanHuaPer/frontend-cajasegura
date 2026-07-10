@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const cargarDatos = async () => {
     try {
       const token = localStorage.getItem("token_caja");
-      const res = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
     try {
       const token = localStorage.getItem("token_caja");
-      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tickets/scan", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tickets/scan`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

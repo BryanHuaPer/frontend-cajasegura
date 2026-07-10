@@ -14,7 +14,7 @@ export default function AuditoriaPage() {
     
     try {
       const token = localStorage.getItem("token_caja");
-      const res = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audits/generate", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audits/generate`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
