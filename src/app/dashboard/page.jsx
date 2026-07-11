@@ -19,6 +19,10 @@ export default function DashboardPage() {
   const [sessionId, setSessionId] = useState("");
   const [saldoInicial, setSaldoInicial] = useState(0);
 
+  const [modalApertura, setModalApertura] = useState(false);
+  const [montoApertura, setMontoApertura] = useState("");
+  const [cargandoApertura, setCargandoApertura] = useState(false);
+
   // 1. Cargar datos reales al iniciar la pantalla
   const cargarDatos = async () => {
     try {
@@ -28,9 +32,14 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       
-      setSessionId(data.cash_session_id);
-      setSaldoInicial(data.opening_balance);
-      setTransacciones(data.transactions);
+      if (!data.cash_session_id) {
+        setModalApertura(true);
+      } else {
+        setModalApertura(false);
+        setSessionId(data.cash_session_id);
+        setSaldoInicial(data.opening_balance);
+        setTransacciones(data.transactions);
+      }
     } catch (error) {
       console.error("Error cargando datos", error);
     }
@@ -90,6 +99,32 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAbrirCaja = async () => {
+    if (!montoApertura || isNaN(montoApertura)) return;
+    setCargandoApertura(true);
+
+    try {
+      const token = localStorage.getItem("token_caja");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/open`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ opening_balance: parseFloat(montoApertura) }),
+      });
+
+      if (response.ok) {
+        setMontoApertura("");
+        cargarDatos(); // Recargamos para que quite el modal y muestre la tabla
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCargandoApertura(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -122,6 +157,39 @@ export default function DashboardPage() {
             <DialogFooter>
               <Button disabled={cargando} onClick={handleProcesarTicket}>
                 {cargando ? "Procesando en cola..." : "Enviar a Gemini"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* MODAL DE APERTURA DE CAJA (Bloqueante) */}
+        <Dialog open={modalApertura} onOpenChange={() => {}}>
+          {/* El onOpenChange vacío evita que el usuario lo cierre haciendo clic afuera */}
+          <DialogContent className="sm:max-w-[400px] [&>button]:hidden">
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-blue-600">Apertura de Caja</DialogTitle>
+              <DialogDescription>
+                Para empezar tu turno, ingresa el dinero exacto con el que estás abriendo la caja física.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Monto base (Soles)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-500 font-bold">S/</span>
+                  <input 
+                    type="number" 
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm pl-8 outline-none focus:ring-2 focus:ring-blue-600 dark:border-slate-700"
+                    placeholder="Ej: 150.00" 
+                    value={montoApertura}
+                    onChange={(e) => setMontoApertura(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button disabled={cargandoApertura || !montoApertura} onClick={handleAbrirCaja} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                {cargandoApertura ? "Abriendo..." : "Confirmar Apertura"}
               </Button>
             </DialogFooter>
           </DialogContent>
