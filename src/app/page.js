@@ -77,7 +77,7 @@ export default function LandingPage() {
             <div className="cs-hero-text">
               <div className="cs-hero-badge">
                 <div className="cs-badge-dot"></div>
-                <span>Potenciado con IA · Gemini 2.5 Flash</span>
+                <span>Potenciado con IA · Gemini 3.1 Flash Lite</span>
               </div>
 
               <h1 className="cs-hero-title">
@@ -294,7 +294,7 @@ export default function LandingPage() {
                   iconClass: "cs-icon-purple",
                   icon: "ri-bar-chart-2-line",
                   title: "Auditorías Predictivas",
-                  desc: "Gemini 2.5 Flash analiza tus patrones de gasto y proyecta tu liquidez mensual antes de que sea un problema.",
+                  desc: "Gemini 3.1 Flash Lite analiza tus patrones de gasto y proyecta tu liquidez mensual antes de que sea un problema.",
                 },
                 {
                   iconClass: "cs-icon-green",
@@ -426,7 +426,7 @@ export default function LandingPage() {
                   </div>
                   <ul className="cs-pricing-features">
                     <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Usuarios ilimitados</li>
-                    <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Auditoría IA (Gemini 2.5)</li>
+                    <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Auditoría IA (Gemini 3.1 Flash Lite)</li>
                     <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Lector OCR de facturas</li>
                     <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Alertas gastos hormiga</li>
                     <li className="cs-feat-included"><i className="ri-checkbox-circle-fill"></i> Soporte prioritario</li>
