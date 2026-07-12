@@ -127,15 +127,11 @@ export default function LandingPage() {
               <div className="cs-mockup-container">
                 <div className="cs-mockup-frame">
                   {/* PLACEHOLDER — reemplaza con tu <img> real */}
-                  <div className="cs-mockup-screen">
-                    <div className="cs-mockup-icon">
-                      <i className="ri-smartphone-line"></i>
-                    </div>
-                    <p className="cs-mockup-placeholder">
-                      Inserta aquí la captura de pantalla de tu app
-                    </p>
-                    <span className="cs-mockup-label">Mockup placeholder</span>
-                  </div>
+                  <img
+                    src="/app-screenshot.png"
+                    alt="Vista de la app CajaSegura en móvil"
+                    className="cs-app-screenshot"
+                  />
                 </div>
               </div>
             </div>

@@ -855,6 +855,51 @@
   }
 }
 
+/* ── Captura de pantalla con auto-scroll ── */
+.cs-app-screenshot {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* La animación desplaza la imagen de arriba hacia abajo y vuelve */
+  animation: cs-scroll-preview 12s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: top center;
+}
+
+/* Al hacer hover sobre el frame, la animación se pausa */
+.cs-mockup-frame:hover .cs-app-screenshot {
+  animation-play-state: paused;
+  cursor: grab;
+}
+
+/*
+  La fórmula calc(-100% + Xpx) donde X = altura visible del frame:
+    240px wide → 240 × 16/9 ≈ 427px  (móvil)
+    280px wide → 280 × 16/9 ≈ 498px  (desktop)
+  Esto mueve la imagen hasta que su borde inferior coincide
+  con el borde inferior del frame → se ve el final del screenshot.
+*/
+@keyframes cs-scroll-preview {
+  /* Pausa al inicio — se ve la parte de arriba */
+  0%,
+  15% {
+    transform: translateY(0);
+  }
+
+  /* Deslizamiento hacia abajo — se ve toda la captura */
+  45%,
+  65% {
+    transform: translateY(calc(-100% + 427px));
+  }
+
+  /* Regresa suavemente al inicio */
+  85%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+
 .cs-mockup-screen {
   width: 100%;
   height: 100%;
