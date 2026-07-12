@@ -10,6 +10,7 @@ export default function AuditoriaPage() {
   const [reporte, setReporte] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(false);
+  const [generadoEn, setGeneradoEn] = useState(null); // timestamp del último reporte
 
   const generarAuditoria = async () => {
     setCargando(true);
@@ -26,6 +27,7 @@ export default function AuditoriaPage() {
 
       if (res.ok && data.audit_report) {
         setReporte(data.audit_report);
+        setGeneradoEn(new Date()); // guardar momento exacto de generación
       } else {
         setError(true);
         setReporte("No se pudo generar la auditoría. Verifica que haya movimientos registrados.");
@@ -87,6 +89,27 @@ export default function AuditoriaPage() {
         </CardContent>
       </Card>
 
+      {/* SKELETON LOADER mientras Gemini trabaja */}
+      {cargando && (
+        <div className="space-y-4 animate-pulse">
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/3"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4/6"></div>
+          </div>
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/4 mt-6"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-purple-100 dark:bg-purple-900/20 rounded w-full"></div>
+            <div className="h-4 bg-purple-100 dark:bg-purple-900/20 rounded w-5/6"></div>
+            <div className="h-4 bg-purple-100 dark:bg-purple-900/20 rounded w-3/6"></div>
+          </div>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-2">
+            ⏳ Gemini está analizando tu bóveda financiera...
+          </p>
+        </div>
+      )}
+
       {/* ÁREA DE RESULTADOS (Empty State o Reporte) */}
       {!reporte && !cargando && (
         <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/20">
@@ -103,10 +126,17 @@ export default function AuditoriaPage() {
       {reporte && (
         <Card className={`mt-6 shadow-lg overflow-hidden border-t-4 ${error ? 'border-t-red-500 dark:bg-slate-900' : 'border-t-purple-600 dark:bg-slate-900 dark:border-slate-800'}`}>
           <CardHeader className={`${error ? 'bg-red-50 dark:bg-red-900/10' : 'bg-purple-50 dark:bg-purple-900/10'} border-b border-slate-100 dark:border-slate-800`}>
-            <CardTitle className={`flex items-center gap-2 ${error ? 'text-red-700 dark:text-red-400' : 'text-purple-800 dark:text-purple-300'}`}>
-              {error ? <AlertCircle className="w-5 h-5" /> : <BrainCircuit className="w-5 h-5" />}
-              {error ? "Fallo en el Análisis" : "Dictamen Financiero IA"}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className={`flex items-center gap-2 ${error ? 'text-red-700 dark:text-red-400' : 'text-purple-800 dark:text-purple-300'}`}>
+                {error ? <AlertCircle className="w-5 h-5" /> : <BrainCircuit className="w-5 h-5" />}
+                {error ? "Fallo en el Análisis" : "Dictamen Financiero IA"}
+              </CardTitle>
+              {generadoEn && !error && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Generado a las {generadoEn.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="pt-6">
             {error ? (

@@ -131,8 +131,15 @@ export default function DashboardPage() {
       {/* CABECERA Y BOTÓN DE IA */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Resumen de Turno</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Gestiona los ingresos y egresos de tu caja en tiempo real.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Resumen de Turno</h2>
+            {/* Indicador de actualización en vivo */}
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              En vivo
+            </span>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400">Gestiona los ingresos y egresos de tu caja en tiempo real.</p>
         </div>
 
         <Button
@@ -175,21 +182,33 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600 dark:bg-blue-700 border-none shadow-md text-white">
+        <Card className={`border-none shadow-md text-white ${
+          saldoActual >= parseFloat(saldoInicial)
+            ? "bg-blue-600 dark:bg-blue-700"
+            : "bg-rose-600 dark:bg-rose-700"
+        }`}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-blue-100">Saldo Actual Neto</CardTitle>
-            <Receipt className="w-4 h-4 text-blue-200" />
+            <CardTitle className="text-sm font-medium opacity-80">Saldo Actual Neto</CardTitle>
+            <Receipt className="w-4 h-4 opacity-60" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold tracking-tight">S/ {saldoActual.toFixed(2)}</div>
+            <p className="text-xs mt-1 opacity-75">
+              {saldoActual >= parseFloat(saldoInicial) ? "▲" : "▼"} vs. S/ {parseFloat(saldoInicial).toFixed(2)} inicial
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* TABLA DE TRANSACCIONES */}
       <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg text-slate-900 dark:text-white">Últimos Movimientos</CardTitle>
+          {transacciones.length > 0 && (
+            <span className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full">
+              {transacciones.length} registros
+            </span>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -214,12 +233,25 @@ export default function DashboardPage() {
                 ) : (
                   transacciones.map((t) => (
                     <TableRow key={t.id} className="dark:border-slate-800 dark:hover:bg-slate-800/50 transition-colors">
-                      <TableCell className="font-medium text-slate-600 dark:text-slate-400">
+                      <TableCell className="font-medium text-slate-500 dark:text-slate-400 text-sm">
                         {new Date(t.created_at).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </TableCell>
-                      <TableCell className="text-slate-900 dark:text-slate-200">{t.description || "Sin descripción"}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                            t.type === "income" ? "bg-emerald-500" : "bg-red-500"
+                          }`}></span>
+                          <span className="text-slate-900 dark:text-slate-200 text-sm">{t.description || "Sin descripción"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`font-medium text-xs ${
+                            t.type === "income"
+                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
+                              : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+                          }`}
+                        >
                           {t.category}
                         </Badge>
                       </TableCell>
