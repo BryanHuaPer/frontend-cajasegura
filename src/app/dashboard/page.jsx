@@ -82,17 +82,20 @@ export default function DashboardPage() {
           setModalAbierto(false);
           setTextoTicket("");
           setMensaje("");
+          setCargando(false);
           cargarDatos();
         }, 1500);
       } else {
-        setMensaje("Error: No se pudo procesar.");
+        setMensaje("Error: " + (data.message || "No se pudo procesar."));
+        setCargando(false);
       }
     } catch (error) {
-      setMensaje("Error de red.");
-    } finally {
-      if (!response?.ok) setCargando(false);
+      setMensaje("Error de red. Verifica tu conexión.");
+      setCargando(false);
     }
+
   };
+
 
   const handleAbrirCaja = async () => {
     if (!montoApertura || isNaN(montoApertura)) return;
@@ -182,11 +185,10 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className={`border-none shadow-md text-white ${
-          saldoActual >= parseFloat(saldoInicial)
+        <Card className={`border-none shadow-md text-white ${saldoActual >= parseFloat(saldoInicial)
             ? "bg-blue-600 dark:bg-blue-700"
             : "bg-rose-600 dark:bg-rose-700"
-        }`}>
+          }`}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium opacity-80">Saldo Actual Neto</CardTitle>
             <Receipt className="w-4 h-4 opacity-60" />
@@ -238,19 +240,17 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            t.type === "income" ? "bg-emerald-500" : "bg-red-500"
-                          }`}></span>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.type === "income" ? "bg-emerald-500" : "bg-red-500"
+                            }`}></span>
                           <span className="text-slate-900 dark:text-slate-200 text-sm">{t.description || "Sin descripción"}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={`font-medium text-xs ${
-                            t.type === "income"
+                          className={`font-medium text-xs ${t.type === "income"
                               ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
                               : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
-                          }`}
+                            }`}
                         >
                           {t.category}
                         </Badge>
