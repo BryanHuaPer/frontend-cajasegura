@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Wallet, BrainCircuit, LogOut, LayoutDashboard, Menu, X } from "lucide-react";
+// IMPORTANTE: Agregamos Crown y Lock para el botón de planes
+import { Wallet, BrainCircuit, LogOut, LayoutDashboard, Menu, X, Crown, Lock } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -11,24 +12,40 @@ export default function DashboardLayout({ children }) {
   const [autorizado, setAutorizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
 
-  // Nuevo estado para controlar el menú en celulares
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+
+  // NUEVO: Estado del plan para la demo
+  const [planActual, setPlanActual] = useState("pro");
 
   useEffect(() => {
     const token = localStorage.getItem("token_caja");
     const nombre = localStorage.getItem("usuario_nombre");
+    const planGuardado = localStorage.getItem("cs_plan") || "pro"; // Por defecto pro
 
     if (!token) {
       router.push("/login");
     } else {
       setAutorizado(true);
       if (nombre) setNombreUsuario(nombre);
+      setPlanActual(planGuardado);
     }
   }, [router]);
 
   const handleLogout = () => {
     localStorage.clear();
     router.push("/login");
+  };
+
+  // NUEVO: Función para cambiar el plan visualmente en la demostración
+  const togglePlan = () => {
+    const nuevoPlan = planActual === "pro" ? "free" : "pro";
+    localStorage.setItem("cs_plan", nuevoPlan);
+
+    // Si pasamos a free, reiniciamos los créditos a 5 para la demo
+    if (nuevoPlan === "free") localStorage.setItem("cs_creditos", 5);
+
+    setPlanActual(nuevoPlan);
+    window.dispatchEvent(new Event("planChanged")); // Avisa a todas las pantallas
   };
 
   if (!autorizado) return null;
@@ -40,19 +57,19 @@ export default function DashboardLayout({ children }) {
       <nav className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
         <div className="px-4 sm:px-6 h-16 flex justify-between items-center max-w-7xl mx-auto">
 
-          {/* LOGO (Visible en todas las pantallas) */}
+          {/* LOGO */}
           <div className="flex items-center gap-2 text-blue-600 dark:text-blue-500">
             <Wallet className="w-6 h-6" />
             <h1 className="text-xl font-extrabold tracking-tight">CajaSegura</h1>
           </div>
 
-          {/* ENLACES CENTRALES (Ocultos en móvil, visibles en PC) */}
+          {/* ENLACES CENTRALES */}
           <div className="hidden md:flex gap-2">
             <Link
               href="/dashboard"
               className={`flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors ${pathname === "/dashboard"
-                  ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                 }`}
             >
               <LayoutDashboard className="w-4 h-4" /> Caja Chica
@@ -61,16 +78,29 @@ export default function DashboardLayout({ children }) {
             <Link
               href="/dashboard/auditoria"
               className={`flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors ${pathname === "/dashboard/auditoria"
-                  ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                 }`}
             >
               <BrainCircuit className="w-4 h-4" /> Auditoría IA
             </Link>
           </div>
 
-          {/* ZONA DE USUARIO Y SALIR (Oculta en móvil, visible en PC) */}
+          {/* ZONA DE USUARIO Y BOTÓN DE PLAN */}
           <div className="hidden md:flex gap-4 items-center">
+
+            {/* BOTÓN MÁGICO PARA LA SUSTENTACIÓN */}
+            <button
+              onClick={togglePlan}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${planActual === "pro"
+                ? "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
+                : "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                }`}
+            >
+              {planActual === "pro" ? <Crown className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              {planActual === "pro" ? "PLAN PRO" : "PLAN GRATIS"}
+            </button>
+
             <div className="flex items-center pl-4 border-l border-slate-200 dark:border-slate-700">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300 mr-4">
                 Hola, {nombreUsuario}
@@ -85,7 +115,7 @@ export default function DashboardLayout({ children }) {
             </button>
           </div>
 
-          {/* BOTÓN MENÚ HAMBURGUESA (Solo visible en móviles) */}
+          {/* BOTÓN MENÚ HAMBURGUESA */}
           <div className="flex md:hidden items-center">
             <button
               onClick={() => setMenuMovilAbierto(!menuMovilAbierto)}
@@ -96,52 +126,63 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
 
-        {/* =========================================
-            MENÚ DESPLEGABLE PARA MÓVILES
-        ========================================= */}
+        {/* MENÚ MÓVIL */}
         {menuMovilAbierto && (
-          <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 pt-2 pb-4 space-y-1 shadow-lg">
+          <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 pt-3 pb-4 space-y-1 shadow-lg">
 
-            {/* Saludo en Móvil */}
-            <div className="px-3 py-3 mb-2 border-b border-slate-100 dark:border-slate-800">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Cajero Activo</p>
-              <p className="text-sm font-medium text-slate-900 dark:text-white">{nombreUsuario}</p>
+            {/* Usuario */}
+            <div className="px-3 py-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Cajero activo</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{nombreUsuario}</p>
             </div>
 
+            {/* Toggle de plan */}
+            <button
+              onClick={togglePlan}
+              className={`w-full flex items-center justify-center gap-2 mb-3 px-3 py-2 rounded-md text-sm font-bold border transition-colors ${planActual === "pro"
+                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                }`}
+            >
+              {planActual === "pro" ? <Crown className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              {planActual === "pro" ? "PLAN PRO — Cambiar a Gratis" : "PLAN GRATIS — Cambiar a Pro"}
+            </button>
+
+            {/* Nav links */}
             <Link
               href="/dashboard"
               onClick={() => setMenuMovilAbierto(false)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-md font-medium text-base transition-colors ${pathname === "/dashboard"
-                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md font-medium text-sm transition-colors ${pathname === "/dashboard"
+                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
             >
-              <LayoutDashboard className="w-5 h-5" /> Caja Chica
+              <LayoutDashboard className="w-4 h-4" /> Caja Chica
             </Link>
 
             <Link
               href="/dashboard/auditoria"
               onClick={() => setMenuMovilAbierto(false)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-md font-medium text-base transition-colors ${pathname === "/dashboard/auditoria"
-                  ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
-                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md font-medium text-sm transition-colors ${pathname === "/dashboard/auditoria"
+                ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
+                : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
             >
-              <BrainCircuit className="w-5 h-5" /> Auditoría IA
+              <BrainCircuit className="w-4 h-4" /> Auditoría IA
             </Link>
 
+            {/* Cerrar sesión */}
             <button
               onClick={handleLogout}
-              className="flex items-center w-full gap-3 px-3 py-3 mt-2 rounded-md font-medium text-base text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/10 dark:hover:bg-red-900/20 transition-colors"
+              className="flex items-center w-full gap-3 px-3 py-2.5 mt-2 rounded-md font-medium text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/10 transition-colors"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
               Cerrar Sesión
             </button>
           </div>
         )}
       </nav>
 
-      {/* CONTENIDO PRINCIPAL */}
       <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
         {children}
       </main>

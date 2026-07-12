@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Wallet, TrendingUp, TrendingDown, Receipt, Sparkles, Loader2, Plus, Lock } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, Sparkles, Loader2, Plus, Lock, Crown } from "lucide-react";
 
 export default function DashboardPage() {
   const [textoTicket, setTextoTicket] = useState("");
@@ -41,6 +41,25 @@ export default function DashboardPage() {
     "Ventas", "Mercadería", "Movilidad", "Alimentación",
     "Suministros de Oficina", "Servicios", "Planilla", "Varios"
   ];
+
+  const [plan, setPlan] = useState("pro");
+  const [creditos, setCreditos] = useState(5);
+
+  useEffect(() => {
+    const planGuardado = localStorage.getItem("cs_plan") || "pro";
+    const creditosGuardados = localStorage.getItem("cs_creditos");
+
+    setPlan(planGuardado);
+    if (creditosGuardados !== null) setCreditos(parseInt(creditosGuardados));
+
+    const handlePlanChange = () => {
+      setPlan(localStorage.getItem("cs_plan") || "pro");
+      const c = localStorage.getItem("cs_creditos");
+      if (c !== null) setCreditos(parseInt(c));
+    };
+    window.addEventListener("planChanged", handlePlanChange);
+    return () => window.removeEventListener("planChanged", handlePlanChange);
+  }, []);
 
   // 1. Cargar datos reales al iniciar la pantalla
   const cargarDatos = async () => {
@@ -96,6 +115,13 @@ export default function DashboardPage() {
 
       if (response.ok) {
         setMensaje("¡Éxito! " + data.message);
+
+        if (plan === "free") {
+          const nuevosCreditos = creditos - 1;
+          setCreditos(nuevosCreditos);
+          localStorage.setItem("cs_creditos", nuevosCreditos);
+        }
+
         setTimeout(() => {
           setModalAbierto(false);
           setTextoTicket("");
@@ -232,7 +258,11 @@ export default function DashboardPage() {
             onClick={() => setModalAbierto(true)}
             className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md font-medium h-11"
           >
-            <Sparkles className="w-4 h-4 mr-2 text-blue-200" /> IA
+            <Sparkles className="w-4 h-4 mr-2 text-blue-200" />
+            <span className="hidden sm:inline">Procesar con </span>IA
+            {plan === "free" && (
+              <span className="ml-2 bg-blue-500 text-blue-100 text-xs font-bold px-1.5 py-0.5 rounded">{creditos}</span>
+            )}
           </Button>
 
           <Button
@@ -366,43 +396,70 @@ export default function DashboardPage() {
       ========================================= */}
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
         <DialogContent className="sm:max-w-[450px] dark:bg-slate-900 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-xl">
-              <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
-              Asistente de Registro
-            </DialogTitle>
-            <DialogDescription>
-              Pega el texto del Yape, Plin o detalla el gasto. La Inteligencia Artificial lo ordenará por ti.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea
-              placeholder="Ej: Yape de S/ 45.50 por pago de movilidad..."
-              value={textoTicket}
-              onChange={(e) => setTextoTicket(e.target.value)}
-              rows={5}
-              className="resize-none dark:bg-slate-800 dark:border-slate-700 focus-visible:ring-blue-600"
-              disabled={cargando}
-            />
-            {mensaje && (
-              <p className={`text-sm font-medium p-3 rounded-md ${mensaje.includes("Error") ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"}`}>
-                {mensaje}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              disabled={cargando || !textoTicket.trim()}
-              onClick={handleProcesarTicket}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {cargando ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</>
-              ) : (
-                "Extraer y Guardar"
-              )}
-            </Button>
-          </DialogFooter>
+          {plan === "free" && creditos <= 0 ? (
+            /* VISTA DE BLOQUEO (PAYWALL) */
+            <div className="flex flex-col items-center py-6 text-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <Lock className="w-8 h-8 text-slate-400" />
+              </div>
+              <DialogTitle className="text-xl mb-2">Límite de IA Alcanzado</DialogTitle>
+              <DialogDescription className="mb-6">
+                Has agotado tus 5 escaneos gratuitos. Para seguir digitalizando tus comprobantes automáticamente, mejora tu plan.
+              </DialogDescription>
+              <Button onClick={() => setModalAbierto(false)} className="bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold w-full">
+                <Crown className="w-5 h-5 mr-2" /> Mejorar a PyME IA
+              </Button>
+            </div>
+          ) : (
+            /* VISTA NORMAL DEL ESCÁNER */
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center text-xl justify-between w-full">
+                  <div className="flex items-center">
+                    <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
+                    Asistente de Registro
+                  </div>
+                  {/* Etiqueta de créditos restantes */}
+                  {plan === "free" && (
+                    <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-md">
+                      {creditos} créditos IA
+                    </span>
+                  )}
+                </DialogTitle>
+                <DialogDescription>
+                  Pega el texto del Yape, Plin o detalla el gasto. La Inteligencia Artificial lo ordenará por ti.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <Textarea
+                  placeholder="Ej: Yape de S/ 45.50 por pago de movilidad..."
+                  value={textoTicket}
+                  onChange={(e) => setTextoTicket(e.target.value)}
+                  rows={5}
+                  className="resize-none dark:bg-slate-800 dark:border-slate-700 focus-visible:ring-blue-600"
+                  disabled={cargando}
+                />
+                {mensaje && (
+                  <p className={`text-sm font-medium p-3 rounded-md ${mensaje.includes("Error") ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"}`}>
+                    {mensaje}
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  disabled={cargando || !textoTicket.trim()}
+                  onClick={handleProcesarTicket}
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {cargando ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</>
+                  ) : (
+                    "Extraer y Guardar"
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
