@@ -27,7 +27,7 @@ export default function AuditoriaPage() {
 
       if (res.ok && data.audit_report) {
         setReporte(data.audit_report);
-        setGeneradoEn(new Date()); // guardar momento exacto de generación
+        setGeneradoEn(new Date());
       } else {
         setError(true);
         setReporte("No se pudo generar la auditoría. Verifica que haya movimientos registrados.");

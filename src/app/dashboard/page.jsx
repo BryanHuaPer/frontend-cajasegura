@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Wallet, TrendingUp, TrendingDown, Receipt, Sparkles, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, Sparkles, Loader2, Plus, Lock } from "lucide-react";
 
 export default function DashboardPage() {
   const [textoTicket, setTextoTicket] = useState("");
@@ -23,6 +23,24 @@ export default function DashboardPage() {
   const [modalApertura, setModalApertura] = useState(false);
   const [montoApertura, setMontoApertura] = useState("");
   const [cargandoApertura, setCargandoApertura] = useState(false);
+
+  const [modalManual, setModalManual] = useState(false);
+  const [cargandoManual, setCargandoManual] = useState(false);
+  const [formManual, setFormManual] = useState({
+    type: "income",
+    amount: "",
+    category: "Ventas",
+    description: ""
+  });
+
+  const [modalCierre, setModalCierre] = useState(false);
+  const [montoCierre, setMontoCierre] = useState("");
+  const [cargandoCierre, setCargandoCierre] = useState(false);
+
+  const categoriasPermitidas = [
+    "Ventas", "Mercadería", "Movilidad", "Alimentación",
+    "Suministros de Oficina", "Servicios", "Planilla", "Varios"
+  ];
 
   // 1. Cargar datos reales al iniciar la pantalla
   const cargarDatos = async () => {
@@ -123,6 +141,62 @@ export default function DashboardPage() {
     }
   };
 
+  const handleGuardarManual = async () => {
+    if (!formManual.amount || isNaN(formManual.amount)) return;
+    setCargandoManual(true);
+    try {
+      const token = localStorage.getItem("token_caja");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+          cash_session_id: sessionId,
+          amount: parseFloat(formManual.amount),
+          type: formManual.type,
+          category: formManual.category,
+          description: formManual.description || "Ingreso manual"
+        }),
+      });
+
+      if (response.ok) {
+        setModalManual(false);
+        setFormManual({ type: "income", amount: "", category: "Ventas", description: "" });
+        cargarDatos();
+      }
+    } catch (error) {
+      console.error("Error guardando manual", error);
+    } finally {
+      setCargandoManual(false);
+    }
+  };
+
+  const handleCerrarCaja = async () => {
+    if (!montoCierre || isNaN(montoCierre)) return;
+    setCargandoCierre(true);
+    try {
+      const token = localStorage.getItem("token_caja");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/transactions/close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+          cash_session_id: sessionId,
+          final_balance: parseFloat(montoCierre)
+        }),
+      });
+
+      if (response.ok) {
+        setModalCierre(false);
+        setMontoCierre("");
+        // Al recargar datos, la API dirá que no hay caja abierta y mostrará el modal de apertura
+        cargarDatos();
+      }
+    } catch (error) {
+      console.error("Error cerrando caja", error);
+    } finally {
+      setCargandoCierre(false);
+    }
+  };
+
   // Cálculos matemáticos en tiempo real
   const ingresos = transacciones.filter(t => t.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
   const egresos = transacciones.filter(t => t.type === 'expense').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
@@ -145,12 +219,30 @@ export default function DashboardPage() {
           <p className="text-slate-500 dark:text-slate-400">Gestiona los ingresos y egresos de tu caja en tiempo real.</p>
         </div>
 
-        <Button
-          onClick={() => setModalAbierto(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-md font-medium h-11 px-6 w-full sm:w-auto"
-        >
-          <Sparkles className="w-4 h-4 mr-2 text-blue-200" /> Procesar con IA
-        </Button>
+        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <Button
+            onClick={() => setModalManual(true)}
+            variant="outline"
+            className="flex-1 md:flex-none bg-white dark:bg-slate-900 dark:border-slate-700 h-11"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Manual
+          </Button>
+
+          <Button
+            onClick={() => setModalAbierto(true)}
+            className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md font-medium h-11"
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-blue-200" /> IA
+          </Button>
+
+          <Button
+            onClick={() => setModalCierre(true)}
+            variant="destructive"
+            className="flex-1 md:flex-none h-11 bg-red-500 hover:bg-red-600 text-white shadow-md"
+          >
+            <Lock className="w-4 h-4 mr-2" /> Cerrar Turno
+          </Button>
+        </div>
       </div>
 
       {/* TARJETAS DE KPIs */}
@@ -186,8 +278,8 @@ export default function DashboardPage() {
         </Card>
 
         <Card className={`border-none shadow-md text-white ${saldoActual >= parseFloat(saldoInicial)
-            ? "bg-blue-600 dark:bg-blue-700"
-            : "bg-rose-600 dark:bg-rose-700"
+          ? "bg-blue-600 dark:bg-blue-700"
+          : "bg-rose-600 dark:bg-rose-700"
           }`}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium opacity-80">Saldo Actual Neto</CardTitle>
@@ -248,8 +340,8 @@ export default function DashboardPage() {
                       <TableCell>
                         <Badge
                           className={`font-medium text-xs ${t.type === "income"
-                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
-                              : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400"
+                            : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
                             }`}
                         >
                           {t.category}
@@ -309,6 +401,107 @@ export default function DashboardPage() {
               ) : (
                 "Extraer y Guardar"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* =========================================
+          MODAL 2: INGRESO MANUAL
+      ========================================= */}
+      <Dialog open={modalManual} onOpenChange={setModalManual}>
+        <DialogContent className="sm:max-w-[400px] dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Registro Manual</DialogTitle>
+            <DialogDescription>Añade un ingreso o egreso sin usar la IA.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={formManual.type === "income" ? "default" : "outline"}
+                onClick={() => setFormManual({ ...formManual, type: "income" })}
+                className={formManual.type === "income" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+              >
+                Ingreso
+              </Button>
+              <Button
+                type="button"
+                variant={formManual.type === "expense" ? "default" : "outline"}
+                onClick={() => setFormManual({ ...formManual, type: "expense" })}
+                className={formManual.type === "expense" ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+              >
+                Egreso
+              </Button>
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-slate-500 font-bold">S/</span>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={formManual.amount}
+                onChange={(e) => setFormManual({ ...formManual, amount: e.target.value })}
+                className="w-full h-10 pl-9 pr-3 rounded-md border border-slate-300 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
+              />
+            </div>
+
+            <select
+              value={formManual.category}
+              onChange={(e) => setFormManual({ ...formManual, category: e.target.value })}
+              className="w-full h-10 px-3 rounded-md border border-slate-300 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
+            >
+              {categoriasPermitidas.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+
+            <input
+              type="text"
+              placeholder="Descripción breve..."
+              value={formManual.description}
+              onChange={(e) => setFormManual({ ...formManual, description: e.target.value })}
+              className="w-full h-10 px-3 rounded-md border border-slate-300 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-blue-600 outline-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button disabled={cargandoManual || !formManual.amount} onClick={handleGuardarManual} className="w-full">
+              {cargandoManual ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Movimiento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* =========================================
+          MODAL 3: CIERRE DE CAJA
+      ========================================= */}
+      <Dialog open={modalCierre} onOpenChange={setModalCierre}>
+        <DialogContent className="sm:max-w-[400px] dark:bg-slate-900 dark:border-slate-800 border-t-4 border-t-red-500">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center text-red-600 dark:text-red-400">Cerrar Turno</DialogTitle>
+            <DialogDescription className="text-center">
+              Tu saldo teórico es de <strong>S/ {saldoActual.toFixed(2)}</strong>. <br />
+              Cuenta el dinero en tu cajón e ingresa el monto real para calcular el descuadre.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-slate-500 font-bold text-lg">S/</span>
+              <input
+                type="number"
+                className="w-full h-14 pl-10 pr-4 text-lg font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-transparent outline-none focus:ring-2 focus:ring-red-500 transition-shadow"
+                placeholder={saldoActual.toFixed(2)}
+                value={montoCierre}
+                onChange={(e) => setMontoCierre(e.target.value)}
+                disabled={cargandoCierre}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={cargandoCierre || !montoCierre}
+              onClick={handleCerrarCaja}
+              className="w-full h-12 text-lg font-medium bg-red-600 hover:bg-red-700 text-white"
+            >
+              {cargandoCierre ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirmar Cierre"}
             </Button>
           </DialogFooter>
         </DialogContent>
